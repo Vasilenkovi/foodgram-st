@@ -7,6 +7,7 @@ from recipe.models import (
     ShoppingCart
 )
 
+
 @admin.register(Ingredient)
 class Ingredient_Admin(admin.ModelAdmin):
     list_display = ("pk", "name", "measurement_unit")

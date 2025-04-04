@@ -38,20 +38,31 @@ class User(AbstractUser):
     def __str__(self):
         return self.username
 
+
 class Ingredient(models.Model):
-    name = models.CharField(verbose_name="Название ингридиента", max_length=128,)
-    measurement_unit = models.CharField(verbose_name="Единица измерения", max_length=64,)
-    
+    name = models.CharField(
+        verbose_name="Название ингридиента",
+        max_length=128,
+    )
+    measurement_unit = models.CharField(
+        verbose_name="Единица измерения",
+        max_length=64,
+    )
+
     class Meta:
         verbose_name = 'Ингредиент'
         verbose_name_plural = 'Ингредиенты'
         constraints = [
-            models.UniqueConstraint(fields=['name', 'measurement_unit'], name='unique_ingredient')
+            models.UniqueConstraint(
+                fields=['name', 'measurement_unit'],
+                name='unique_ingredient'
+            )
         ]
 
     def __str__(self):
         return f'{self.name}'
-    
+
+
 class Recipe(models.Model):
     author = models.ForeignKey(
         User,
@@ -77,6 +88,7 @@ class Recipe(models.Model):
         verbose_name="Дата создания",
     )
     ingredients = models.ManyToManyField(Ingredient)
+
     class Meta:
         verbose_name = 'Рецепт'
         verbose_name_plural = 'Рецепты'
@@ -84,7 +96,7 @@ class Recipe(models.Model):
 
     def __str__(self):
         return self.name
-    
+
 
 class IngredientsInRecipe(models.Model):
     recipe = models.ForeignKey(
@@ -106,16 +118,20 @@ class IngredientsInRecipe(models.Model):
         auto_now_add=True,
         verbose_name="Дата создания",
     )
-    
+
     class Meta:
         verbose_name = 'Ингредиент в рецепте'
         verbose_name_plural = 'Ингредиенты в рецепте'
         constraints = [
-            models.UniqueConstraint(fields=['recipe', 'ingredient'], name='unique_ingredient_in_recipe')
+            models.UniqueConstraint(
+                fields=['recipe', 'ingredient'],
+                name='unique_ingredient_in_recipe'
+            )
         ]
 
     def __str__(self):
         return f'{self.ingredient.name} в {self.recipe.name}'
+
 
 class UserRecipeBaseModel(models.Model):
     user = models.ForeignKey(
@@ -134,7 +150,11 @@ class UserRecipeBaseModel(models.Model):
     class Meta:
         abstract = True
         constraints = [
-            models.UniqueConstraint(fields=['user', 'recipe'], name='unique_user_recipe_%(class)s')
+            models.UniqueConstraint
+            (
+                fields=['user', 'recipe'],
+                name='unique_user_recipe_%(class)s'
+            )
         ]
 
 
@@ -152,8 +172,8 @@ class ShoppingCart(UserRecipeBaseModel):
 
     def __str__(self):
         return f'Рецепт "{self.recipe.name}" в корзине у {self.user.username}'
-    
-    
+
+
 class Follow(models.Model):
     author = models.ForeignKey(
         User,
@@ -172,7 +192,11 @@ class Follow(models.Model):
         verbose_name = 'Подписка'
         verbose_name_plural = 'Подписки'
         constraints = [
-            models.UniqueConstraint(fields=['author', 'follower'], name='unique_subscription')
+            models.UniqueConstraint
+            (
+                fields=['author', 'follower'],
+                name='unique_subscription'
+            )
         ]
 
     def __str__(self):

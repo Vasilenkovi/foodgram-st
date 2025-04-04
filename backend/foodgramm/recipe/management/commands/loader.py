@@ -20,7 +20,10 @@ class Command(BaseCommand):
                     Ingredient(**item)
                     for item in reader
                 ]
-                Ingredient.objects.bulk_create(ingredients, ignore_conflicts=True)
+                Ingredient.objects.bulk_create(
+                    ingredients,
+                    ignore_conflicts=True
+                )
                 number_of_loaded_items = Ingredient.objects.count()
 
             print(f'Успешно загружено: ${number_of_loaded_items}')

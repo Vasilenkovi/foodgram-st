@@ -3,18 +3,27 @@ from django.db import IntegrityError
 from django.db.models import Sum
 from django.http import FileResponse
 from django.shortcuts import get_object_or_404
-from django.urls import reverse
 from django.utils import timezone
 from django_filters.rest_framework import DjangoFilterBackend
 from djoser.views import UserViewSet as DjoserUserViewSet
 
 from rest_framework import status
 from rest_framework.decorators import action
-from rest_framework.permissions import IsAuthenticated, IsAuthenticatedOrReadOnly
+from rest_framework.permissions import (
+    IsAuthenticated,
+    IsAuthenticatedOrReadOnly
+)
 from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet, ReadOnlyModelViewSet
 
-from recipe.models import Recipe, ShoppingCart, IngredientsInRecipe, Favorite, Ingredient, Follow
+from recipe.models import (
+    Recipe,
+    ShoppingCart,
+    IngredientsInRecipe,
+    Favorite,
+    Ingredient,
+    Follow
+)
 from .filters import IngredientFilter, RecipeFilter
 from .pagination import PaginationLimiter
 from .permissions import IsAuthorOrReadOnly
@@ -28,6 +37,7 @@ from .serializers import (
 )
 
 User = get_user_model()
+
 
 class UserViewSet(DjoserUserViewSet):
     pagination_class = PaginationLimiter
@@ -43,7 +53,9 @@ class UserViewSet(DjoserUserViewSet):
         )
         return self.get_paginated_response(context_serializer.data)
 
-    @action(methods=['get'], detail=False, permission_classes=[IsAuthenticated])
+    @action(methods=['get'], detail=False,
+            permission_classes=[IsAuthenticated]
+            )
     def me(self, request):
         return super().me(request)
 
@@ -52,15 +64,22 @@ class UserViewSet(DjoserUserViewSet):
         serializer.is_valid(raise_exception=True)
         self.perform_create(serializer)
         headers = self.get_success_headers(serializer.data)
-        return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
+        return Response(serializer.data,
+                        status=status.HTTP_201_CREATED,
+                        headers=headers
+                        )
 
-    @action(detail=True, methods=['post', 'delete'], permission_classes=[IsAuthenticated])
+    @action(detail=True, methods=['post', 'delete'],
+            permission_classes=[IsAuthenticated]
+            )
     def subscribe(self, request, id=None):
         current_user = request.user
         target_user = get_object_or_404(User, id=id)
 
         if request.method == 'POST':
-            return self.handle_subscription_create(current_user, target_user, request)
+            return self.handle_subscription_create(current_user,
+                                                   target_user, request
+                                                   )
         return self.handle_subscription_delete(current_user, target_user)
 
     def handle_subscription_create(self, follower, author, req):
@@ -69,13 +88,13 @@ class UserViewSet(DjoserUserViewSet):
                 {'errors': 'Нельзя подписаться на себя.'},
                 status=status.HTTP_400_BAD_REQUEST
             )
-        
+
         if Follow.objects.filter(follower=follower, author=author).exists():
             return Response(
                 {'errors': 'Вы уже подписаны на этого пользователя.'},
                 status=status.HTTP_400_BAD_REQUEST
             )
-        
+
         Follow.objects.create(follower=follower, author=author)
         serialized = FollowedUserSerializer(author, context={'request': req})
         return Response(serialized.data, status=status.HTTP_201_CREATED)
@@ -83,11 +102,16 @@ class UserViewSet(DjoserUserViewSet):
     def handle_subscription_delete(self, follower, author):
         sub = Follow.objects.filter(follower=follower, author=author).first()
         if not sub:
-            return Response({"errors": "Подписка не найдена"}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"errors": "Подписка не найдена"},
+                            status=status.HTTP_400_BAD_REQUEST
+                            )
         sub.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
 
-    @action(detail=False, url_path='me/avatar', methods=['put', 'delete'], permission_classes=[IsAuthenticated])
+    @action(detail=False, url_path='me/avatar',
+            methods=['put', 'delete'],
+            permission_classes=[IsAuthenticated]
+            )
     def avatar(self, request):
         profile = request.user
 
@@ -129,7 +153,7 @@ class RecipeViewSet(ModelViewSet):
         timestamp = timezone.now().strftime('%d-%m-%Y %H:%M')
         output.append(f'Список покупок на {timestamp}\n')
         output.append('\nРецепты:')
-        
+
         for dish in dishes:
             output.append(f'- {dish.name} (Автор: {dish.author.username})')
         output.append('\nИнгредиенты:')
@@ -141,16 +165,20 @@ class RecipeViewSet(ModelViewSet):
 
         return '\n'.join(output)
 
-    @action(detail=False, methods=['get'], permission_classes=[IsAuthenticated])
+    @action(detail=False, methods=['get'],
+            permission_classes=[IsAuthenticated]
+            )
     def download_shopping_cart(self, request):
         data = self.generate_shopping_list(request.user)
-        resp = FileResponse(data, as_attachment=True, filename='shopping_list.txt')
+        resp = FileResponse(data, as_attachment=True,
+                            filename='shopping_list.txt'
+                            )
         return resp
 
     def include_recipe_in(self, profile, recipe, model):
         if model.objects.filter(user=profile, recipe=recipe).exists():
             return Response(
-                {"errors": "Рецепт уже добавлен"}, 
+                {"errors": "Рецепт уже добавлен"},
                 status=status.HTTP_400_BAD_REQUEST
             )
         model.objects.create(user=profile, recipe=recipe)
@@ -160,7 +188,9 @@ class RecipeViewSet(ModelViewSet):
     def exclude_recipe_from(self, profile, recipe, model):
         entry = model.objects.filter(user=profile, recipe=recipe).first()
         if not entry:
-            return Response({"errors": "Рецепт не был добавлен"}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"errors": "Рецепт не был добавлен"},
+                            status=status.HTTP_400_BAD_REQUEST
+                            )
         entry.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
 
@@ -168,16 +198,22 @@ class RecipeViewSet(ModelViewSet):
         profile = req.user
         dish = get_object_or_404(Recipe, id=pk)
         relation_model = Favorite if 'favorite' in req.path else ShoppingCart
-        
+
         if req.method == 'POST':
             return self.include_recipe_in(profile, dish, relation_model)
         return self.exclude_recipe_from(profile, dish, relation_model)
 
-    @action(detail=True, methods=['post', 'delete'], permission_classes=[IsAuthenticated])
+    @action(detail=True, methods=['post', 'delete'],
+            permission_classes=[IsAuthenticated]
+            )
     def favorite(self, request, pk=None):
         return self.modify_recipe_relation(request, pk)
 
-    @action(detail=True, methods=['post', 'delete'], url_path='shopping_cart', permission_classes=(IsAuthenticated,))
+    @action(
+        detail=True, methods=['post', 'delete'],
+        url_path='shopping_cart',
+        permission_classes=(IsAuthenticated,)
+    )
     def shopping_cart(self, request, pk=None):
         return self.modify_recipe_relation(request, pk)
 
@@ -210,4 +246,3 @@ class IngredientViewSet(ReadOnlyModelViewSet):
     pagination_class = None
     filter_backends = (DjangoFilterBackend,)
     filterset_class = IngredientFilter
-    

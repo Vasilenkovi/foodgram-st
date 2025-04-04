@@ -14,8 +14,8 @@ urlpatterns = [
     path("", include(router.urls)),
     path("auth/", include("djoser.urls.authtoken")),
     path(
-        "recipes/<int:pk>/get-link/", 
-        RecipeViewSet.as_view({"get": "get_link"}), 
+        "recipes/<int:pk>/get-link/",
+        RecipeViewSet.as_view({"get": "get_link"}),
         name="recipe-get-link"
     ),
 ]

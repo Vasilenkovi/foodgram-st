@@ -20,15 +20,17 @@ class RecipeFilter(django_filters.FilterSet):
         if value and self.request.user.is_authenticated:
             return qs.filter(shoppingcarts__user=self.request.user)
         return qs
-    
-    
+
     class Meta:
         model = Recipe
         fields = ['author', 'is_favorited', 'is_in_shopping_cart']
 
 
 class IngredientFilter(django_filters.FilterSet):
-    name = django_filters.CharFilter(field_name='name', lookup_expr='istartswith')
+    name = django_filters.CharFilter(
+        field_name='name',
+        lookup_expr='istartswith'
+    )
 
     class Meta:
         model = Ingredient
