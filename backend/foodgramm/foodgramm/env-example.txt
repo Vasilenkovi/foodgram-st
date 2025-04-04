@@ -1,0 +1,7 @@
+DB_NAME=foodgram_db
+USERNAME=foodgram_user
+PASSWORD=423uoiasdfhSD23!
+HOST=postgres
+PORT=5432
+SECRET_KEY='django-insecure-h&=kq&vcc41)0iy4^0h(&140bsj4ifr$y04p$5x0*!5$6ub3@g'
+DEBUG=True
