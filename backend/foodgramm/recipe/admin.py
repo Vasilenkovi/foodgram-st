@@ -9,21 +9,21 @@ from recipe.models import (
 
 
 @admin.register(Ingredient)
-class Ingredient_Admin(admin.ModelAdmin):
+class IngredientAdmin(admin.ModelAdmin):
     list_display = ("pk", "name", "measurement_unit")
     search_fields = ("name",)
 
 
-class Ingredient_In_Recipe_Inline(admin.TabularInline):
+class IngredientInRecipeInline(admin.TabularInline):
     model = IngredientsInRecipe
     min_num = 1
 
 
 @admin.register(Recipe)
-class Recipe_Admin(admin.ModelAdmin):
+class RecipeAdmin(admin.ModelAdmin):
     list_display = ("pk", "name", "author", "get_favorites", "created_at")
     search_fields = ("name", "author__username", "author__email")
-    inlines = [Ingredient_In_Recipe_Inline]
+    inlines = [IngredientInRecipeInline]
 
     @admin.display(description="Добавлений рецепта в избранное")
     def get_favorites(self, obj):
@@ -36,10 +36,10 @@ class IngredientsInRecipe(admin.ModelAdmin):
 
 
 @admin.register(ShoppingCart)
-class Shopping_Cart_Admin(admin.ModelAdmin):
+class ShoppingCartAdmin(admin.ModelAdmin):
     list_display = ("pk", "user", "recipe")
 
 
 @admin.register(Favorite)
-class Favorite_Admin(admin.ModelAdmin):
+class FavoriteAdmin(admin.ModelAdmin):
     list_display = ("pk", "user", "recipe")
