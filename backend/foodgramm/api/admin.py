@@ -9,7 +9,7 @@ from recipe.models import (
 
 @admin.register(Ingredient)
 class Ingredient_Admin(admin.ModelAdmin):
-    list_display = ("pk", "name", "measure_unit")
+    list_display = ("pk", "name", "measurement_unit")
     search_fields = ("name",)
 
 

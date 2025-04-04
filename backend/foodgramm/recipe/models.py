@@ -11,7 +11,7 @@ class User(AbstractUser):
         blank=False
     )
     username = models.CharField(
-        'Имя пользователя',
+        'Юзернейм',
         max_length=150,
         unique=True,
         validators=[RegexValidator(
@@ -39,14 +39,14 @@ class User(AbstractUser):
         return self.username
 
 class Ingredient(models.Model):
-    name = models.CharField(verbose_name="Название ингридиента")
-    measure_unit = models.CharField(verbose_name="Единица измерения")
+    name = models.CharField(verbose_name="Название ингридиента", max_length=128,)
+    measurement_unit = models.CharField(verbose_name="Единица измерения", max_length=64,)
     
     class Meta:
         verbose_name = 'Ингредиент'
         verbose_name_plural = 'Ингредиенты'
         constraints = [
-            models.UniqueConstraint(fields=['name', 'measure_unit'], name='unique_ingredient')
+            models.UniqueConstraint(fields=['name', 'measurement_unit'], name='unique_ingredient')
         ]
 
     def __str__(self):
@@ -59,17 +59,18 @@ class Recipe(models.Model):
         related_name="recipes",
         verbose_name="Автор",
     )
-    name = models.CharField(verbose_name="Название рецепта")
+    name = models.CharField(verbose_name="Название рецепта", max_length=256,)
     image = models.ImageField(
         upload_to="recipe_pic",
         verbose_name="Фотография",
+        max_length=256
     )
     text = models.TextField(
         verbose_name="Описание"
     )
     cooking_time = models.PositiveIntegerField(
         "Время приготовления (в минутах)",
-
+        validators=[MinValueValidator(1)]
     )
     created_at = models.DateTimeField(
         auto_now_add=True,
@@ -97,8 +98,9 @@ class IngredientsInRecipe(models.Model):
         on_delete=models.CASCADE,
         verbose_name="Ингредиент",
     )
-    number = models.PositiveIntegerField(
+    amount = models.PositiveIntegerField(
         verbose_name="Число",
+        validators=[MinValueValidator(1)]
     )
     creation_time = models.DateTimeField(
         auto_now_add=True,
