@@ -27,5 +27,5 @@ class Command(BaseCommand):
                 number_of_loaded_items = Ingredient.objects.count()
 
             print(f'Успешно загружено: ${number_of_loaded_items}')
-        except IOError as e:
+        except Exception as e:
             print('Произошла ошибка при добавлении ингредиентов', e)
