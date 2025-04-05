@@ -4,7 +4,6 @@ from django.db.models import Sum
 from django.http import FileResponse, Http404
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
-from django.shortcuts import redirect
 from django.urls import reverse
 from django_filters.rest_framework import DjangoFilterBackend
 from djoser.views import UserViewSet as DjoserUserViewSet
@@ -39,11 +38,6 @@ from .serializers import (
 )
 
 User = get_user_model()
-
-
-def redirect_short_link(request, pk):
-    recipe = get_object_or_404(Recipe, pk=pk)
-    return redirect(recipe)
 
 
 class UserViewSet(DjoserUserViewSet):
@@ -253,7 +247,7 @@ class RecipeViewSet(ModelViewSet):
 
     @action(detail=True, methods=["get"], url_path="get-link")
     def get_short_link(self, request, pk=None):
-        path = reverse('recipe_short_link', kwargs={'pk': pk})
+        path = reverse('recipe:recipe_short_link', kwargs={'pk': pk})
         full_url = request.build_absolute_uri(path)
         return Response(data={"short-link": full_url})
 

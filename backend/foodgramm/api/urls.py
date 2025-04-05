@@ -4,7 +4,6 @@ from .views import (
     UserViewSet,
     RecipeViewSet,
     IngredientViewSet,
-    redirect_short_link
 )
 
 router = routers.SimpleRouter()
@@ -17,5 +16,4 @@ app_name = "api"
 urlpatterns = [
     path("", include(router.urls)),
     path("auth/", include("djoser.urls.authtoken")),
-    path("s/<int:pk>/", redirect_short_link, name="recipe_short_link"),
 ]

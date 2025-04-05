@@ -87,7 +87,12 @@ class Recipe(models.Model):
         auto_now_add=True,
         verbose_name="Дата создания",
     )
-    ingredients = models.ManyToManyField(Ingredient)
+    ingredients = models.ManyToManyField(
+        Ingredient,
+        through='IngredientsInRecipe',
+        related_name='recipes',
+        verbose_name='Ингредиенты'
+    )
 
     class Meta:
         verbose_name = 'Рецепт'
@@ -108,15 +113,12 @@ class IngredientsInRecipe(models.Model):
     ingredient = models.ForeignKey(
         Ingredient,
         on_delete=models.CASCADE,
+        related_name="recipe_ingredients",
         verbose_name="Ингредиент",
     )
     amount = models.PositiveIntegerField(
         verbose_name="Число",
         validators=[MinValueValidator(1)]
-    )
-    creation_time = models.DateTimeField(
-        auto_now_add=True,
-        verbose_name="Дата создания",
     )
 
     class Meta:

@@ -31,10 +31,12 @@ class IngredientsInRecipeSerializer(serializers.ModelSerializer):
     measurement_unit = serializers.ReadOnlyField(
         source='ingredient.measurement_unit'
     )
+    amount = serializers.IntegerField()
 
     class Meta:
         model = IngredientsInRecipe
         fields = ('id', 'name', 'measurement_unit', 'amount')
+        read_only_fields = ('id', 'name', 'measurement_unit', 'amount')
 
 
 class UserSerializer(BaseUserSerializer):
@@ -69,6 +71,10 @@ class RecipeSerializer(serializers.ModelSerializer):
             'id', 'author', 'ingredients',
             'is_favorited', 'is_in_shopping_cart',
             'name', 'image', 'text', 'cooking_time'
+        )
+        read_only_fields = (  
+            'id', 'author', 'ingredients',
+            'is_favorited', 'is_in_shopping_cart'
         )
 
     def get_is_favorited(self, obj):
@@ -106,7 +112,7 @@ class RecipeCreateUpdateSerializer(RecipeSerializer):
             IngredientsInRecipe(
                 recipe=recipe,
                 ingredient=item['ingredient'],
-                amount=item['amount']
+                amount=item.get('amount', 1)
             ) for item in ingredients_data
         )
 
@@ -119,6 +125,11 @@ class RecipeCreateUpdateSerializer(RecipeSerializer):
 
         seen_ids = set()
         for item in ingredients:
+            if item.get('amount', 0) < 1:
+                raise serializers.ValidationError(
+                    {"amount": "Количество ингредиента не может быть меньше 1"}
+                )
+
             ing_id = item['ingredient'].id
             if ing_id in seen_ids:
                 raise serializers.ValidationError(
