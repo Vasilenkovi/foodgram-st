@@ -1,9 +1,11 @@
 from django.contrib.auth import get_user_model
 from django.db import IntegrityError
 from django.db.models import Sum
-from django.http import FileResponse
+from django.http import FileResponse, Http404
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
+from django.shortcuts import redirect
+from django.urls import reverse
 from django_filters.rest_framework import DjangoFilterBackend
 from djoser.views import UserViewSet as DjoserUserViewSet
 
@@ -39,6 +41,11 @@ from .serializers import (
 User = get_user_model()
 
 
+def redirect_short_link(request, pk):
+    recipe = get_object_or_404(Recipe, pk=pk)
+    return redirect(recipe)
+
+
 class UserViewSet(DjoserUserViewSet):
     pagination_class = PaginationLimiter
     permission_classes = (IsAuthenticatedOrReadOnly,)
@@ -58,16 +65,6 @@ class UserViewSet(DjoserUserViewSet):
             )
     def me(self, request):
         return super().me(request)
-
-    def create(self, request, *args, **kwargs):
-        serializer = self.get_serializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        self.perform_create(serializer)
-        headers = self.get_success_headers(serializer.data)
-        return Response(serializer.data,
-                        status=status.HTTP_201_CREATED,
-                        headers=headers
-                        )
 
     @action(detail=True, methods=['post', 'delete'],
             permission_classes=[IsAuthenticated]
@@ -89,24 +86,35 @@ class UserViewSet(DjoserUserViewSet):
                 status=status.HTTP_400_BAD_REQUEST
             )
 
-        if Follow.objects.filter(follower=follower, author=author).exists():
+        _, created = Follow.objects.get_or_create(
+            follower=follower,
+            author=author
+        )
+
+        if not created:
             return Response(
                 {'errors': 'Вы уже подписаны на этого пользователя.'},
                 status=status.HTTP_400_BAD_REQUEST
             )
 
-        Follow.objects.create(follower=follower, author=author)
         serialized = FollowedUserSerializer(author, context={'request': req})
         return Response(serialized.data, status=status.HTTP_201_CREATED)
 
     def handle_subscription_delete(self, follower, author):
-        sub = Follow.objects.filter(follower=follower, author=author).first()
-        if not sub:
-            return Response({"errors": "Подписка не найдена"},
-                            status=status.HTTP_400_BAD_REQUEST
-                            )
-        sub.delete()
-        return Response(status=status.HTTP_204_NO_CONTENT)
+        try:
+            sub = get_object_or_404(
+                Follow,
+                follower=follower,
+                author=author
+            )
+            sub.delete()
+            return Response(status=status.HTTP_204_NO_CONTENT)
+
+        except Http404:
+            return Response(
+                {"errors": "Подписка не найдена"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
 
     @action(detail=False, url_path='me/avatar',
             methods=['put', 'delete'],
@@ -176,23 +184,31 @@ class RecipeViewSet(ModelViewSet):
         return resp
 
     def include_recipe_in(self, profile, recipe, model):
-        if model.objects.filter(user=profile, recipe=recipe).exists():
+        obj, created = model.objects.get_or_create(
+            user=profile,
+            recipe=recipe
+
+        )
+
+        if not created:
             return Response(
                 {"errors": "Рецепт уже добавлен"},
                 status=status.HTTP_400_BAD_REQUEST
             )
-        model.objects.create(user=profile, recipe=recipe)
+
         serialized = RecipeMinifiedSerializer(recipe)
         return Response(serialized.data, status=status.HTTP_201_CREATED)
 
     def exclude_recipe_from(self, profile, recipe, model):
-        entry = model.objects.filter(user=profile, recipe=recipe).first()
-        if not entry:
-            return Response({"errors": "Рецепт не был добавлен"},
-                            status=status.HTTP_400_BAD_REQUEST
-                            )
-        entry.delete()
-        return Response(status=status.HTTP_204_NO_CONTENT)
+        try:
+            entry = get_object_or_404(model, user=profile, recipe=recipe)
+            entry.delete()
+            return Response(status=status.HTTP_204_NO_CONTENT)
+        except Http404:
+            return Response(
+                {"errors": "Рецепт не был добавлен"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
 
     def modify_recipe_relation(self, req, pk):
         profile = req.user
@@ -217,27 +233,29 @@ class RecipeViewSet(ModelViewSet):
     def shopping_cart(self, request, pk=None):
         return self.modify_recipe_relation(request, pk)
 
-    def destroy(self, request, *args, **kwargs):
-        obj = self.get_object()
-        self.perform_destroy(obj)
-        return Response(status=status.HTTP_204_NO_CONTENT)
-
     def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)  
         try:
-            return super().create(request, *args, **kwargs)
+            self.perform_create(serializer)  
+            headers = self.get_success_headers(serializer.data)
+            return Response(
+                serializer.data,
+                status=status.HTTP_201_CREATED,
+                headers=headers
+            )
         except IntegrityError as err:
-            if 'unique_ingredient_in_recipe' in str(err):
+            if "unique_ingredient_in_recipe" in str(err):
                 return Response(
                     {"errors": "Ингредиенты не должны повторяться"},
                     status=status.HTTP_400_BAD_REQUEST
                 )
-            raise
 
     @action(detail=True, methods=["get"], url_path="get-link")
-    def get_short_link(self, request, pk):
-        recipe_obj = self.get_object()
-        host = request.get_host()
-        return Response(data={"short-link": f"{host}/s/{recipe_obj.pk}"})
+    def get_short_link(self, request, pk=None):
+        path = reverse('recipe_short_link', kwargs={'pk': pk})
+        full_url = request.build_absolute_uri(path)
+        return Response(data={"short-link": full_url})
 
 
 class IngredientViewSet(ReadOnlyModelViewSet):

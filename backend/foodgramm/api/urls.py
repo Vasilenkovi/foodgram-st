@@ -1,7 +1,11 @@
 from django.urls import include, path
 from rest_framework import routers
-
-from api.views import UserViewSet, RecipeViewSet, IngredientViewSet
+from .views import (
+    UserViewSet,
+    RecipeViewSet,
+    IngredientViewSet,
+    redirect_short_link
+)
 
 router = routers.SimpleRouter()
 router.register("ingredients", IngredientViewSet, basename="ingredients")
@@ -13,9 +17,5 @@ app_name = "api"
 urlpatterns = [
     path("", include(router.urls)),
     path("auth/", include("djoser.urls.authtoken")),
-    path(
-        "recipes/<int:pk>/get-link/",
-        RecipeViewSet.as_view({"get": "get_link"}),
-        name="recipe-get-link"
-    ),
+    path("s/<int:pk>/", redirect_short_link, name="recipe_short_link"),
 ]
