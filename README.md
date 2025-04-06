@@ -7,9 +7,11 @@
 - Postgres
 - Nginx
 # Шаги по развертке:
-1.  Клонируйте репозиторий git clone https://github.com/Vasilenkovi/foodgram-st.git
-2.  Создайте backend/foodgramm/foodgramm/.env и заполните согласнос примеру в backend/foodgramm/foodgramm/env-exapmple.txt данные для БД должные совпадать с данными в docker-compose
-3.  Находясь в папке infra, выполните команду docker-compose up (это поднимет БД, выполнит миграции и загрузит список ингредиентов из папки data, и запустит приложение)
+1.  Клонируйте репозиторий 
+```git clone https://github.com/Vasilenkovi/foodgram-st.git```
+2.  Перейдите в директорию foodgram-st
+3.  Создайте backend/foodgramm/foodgramm/.env и заполните согласнос примеру в backend/foodgramm/foodgramm/env-exapmple.txt данные для БД должные совпадать с данными в docker-compose
+4.  Находясь в папке infra, выполните команду docker-compose up (это поднимет БД, выполнит миграции и загрузит список ингредиентов из папки data, и запустит приложение)
 При необходимости можно вручную провести некоторые операции
 1. Убрать из docker-compose.yml
 ```
@@ -19,13 +21,13 @@ python manage.py collectstatic --noinput && \
              python manage.py loader && \
 ```
 2. Собрать статику
-```  docker compose exec backend python manage.py collectstatic --noinput```
+```  docker compose exec foodgram python manage.py collectstatic --noinput```
 3. Создать миграции
-```  docker compose exec backend python manage.py makemigrations```
+```  docker compose exec foodgram python manage.py makemigrations```
 4. Выполнить миграции
-```  docker compose exec backend python manage.py migrate```
+```  docker compose exec foodgram python manage.py migrate```
 5. Импортировать ингредиенты
-```  docker compose exec backend python manage.py loader```
+```  docker compose exec foodgram python manage.py loader```
 
 Пример файла .env
 ```
@@ -43,4 +45,4 @@ DEBUG=True
 
 # Автор
 Василенко Владимир Игоревич 
-Контакт: vasvovaigor@gmail.com
+Контакт: [vasvovaigor@gmail.com](mailto:vasvovaigor@gmail.com)
