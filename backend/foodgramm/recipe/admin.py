@@ -7,6 +7,13 @@ from recipe.models import (
     Favorite,
     ShoppingCart
 )
+from .models import User  # Добавляем импорт модели User
+
+
+@admin.register(User)
+class UserAdmin(admin.ModelAdmin):
+    list_display = ('username', 'email', 'first_name', 'last_name')
+    search_fields = ('username', 'email')
 
 
 @admin.register(Ingredient)
@@ -27,52 +34,52 @@ class IngredientInRecipeInline(admin.TabularInline):
 class CookingTimeFilter(admin.SimpleListFilter):
     title = 'Время приготовления'
     parameter_name = 'cooking_time'
+    first_quartile = None
+    third_quartile = None  # Добавляем атрибуты для хранения значений
 
     def lookups(self, request, model_admin):
-        cooking_times = Recipe.objects.all().values_list(
+        cooking_times = list(Recipe.objects.values_list(
             'cooking_time', flat=True
-        )
-        if cooking_times:
-            sorted_times = sorted(cooking_times)
-            count_recipes = len(sorted_times)
-            first_quartile = sorted_times[count_recipes // 4]
-            third_quartile = sorted_times[(3 * count_recipes) // 4]
-        else:
-            first_quartile, third_quartile = 10, 30  # значения по умолчанию
-
-        medium_count = Recipe.objects.filter(
-            cooking_time__lte=third_quartile
-        ).exclude(cooking_time__lte=first_quartile).count()
-
-        return (
-            ('fast', f'Быстрее {first_quartile} мин ({Recipe.objects.
-             filter(cooking_time__lte=first_quartile).count()})'),
-            ('medium', f'Быстрее {third_quartile} мин ({medium_count})'),
-            ('slow', f'Долго ({Recipe.objects.
-             filter(cooking_time__gt=third_quartile).count()})'),
-        )
-
-    def queryset(self, request, queryset):
-        cooking_times = Recipe.objects.all().values_list(
-            'cooking_time', flat=True
-        )
+        ))
         if not cooking_times:
-            return queryset
+            return ()
 
         sorted_times = sorted(cooking_times)
         count_recipes = len(sorted_times)
-        first_quartile = sorted_times[count_recipes // 4]
-        third_quartile = sorted_times[(3 * count_recipes) // 4]
+        self.first_quartile = sorted_times[count_recipes // 4]
+        self.third_quartile = sorted_times[(3 * count_recipes) // 4]
+
+        # Вычисляем medium_count без запроса к БД
+        medium_count = sum(
+            self.first_quartile < time <= self.third_quartile
+            for time in cooking_times
+        )
+
+        return (
+            ('fast', f'Быстрее {
+                self.first_quartile} мин ({sum(
+                    t <= self.first_quartile for t in cooking_times
+                )
+            })'),
+            ('medium', f'Быстрее {self.third_quartile} мин ({medium_count})'),
+            ('slow', f'Долго ({sum(
+                t > self.third_quartile for t in cooking_times
+            )})'),
+        )
+
+    def queryset(self, request, queryset):
+        if not self.first_quartile or not self.third_quartile:
+            return queryset
 
         if self.value() == 'fast':
-            return queryset.filter(cooking_time__lte=first_quartile)
+            return queryset.filter(cooking_time__lte=self.first_quartile)
         if self.value() == 'medium':
             return queryset.filter(
-                cooking_time__gt=first_quartile,
-                cooking_time__lte=third_quartile
+                cooking_time__gt=self.first_quartile,
+                cooking_time__lte=self.third_quartile
             )
         if self.value() == 'slow':
-            return queryset.filter(cooking_time__gt=third_quartile)
+            return queryset.filter(cooking_time__gt=self.third_quartile)
 
 
 @admin.register(Recipe)
