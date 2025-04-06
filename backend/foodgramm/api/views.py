@@ -1,7 +1,6 @@
 from django.contrib.auth import get_user_model
-from django.db import IntegrityError
 from django.db.models import Sum
-from django.http import FileResponse, Http404
+from django.http import FileResponse
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from django.urls import reverse
@@ -95,20 +94,13 @@ class UserViewSet(DjoserUserViewSet):
         return Response(serialized.data, status=status.HTTP_201_CREATED)
 
     def handle_subscription_delete(self, follower, author):
-        try:
-            sub = get_object_or_404(
-                Follow,
-                follower=follower,
-                author=author
-            )
-            sub.delete()
-            return Response(status=status.HTTP_204_NO_CONTENT)
-
-        except Http404:
-            return Response(
-                {"errors": "Подписка не найдена"},
-                status=status.HTTP_400_BAD_REQUEST
-            )
+        sub = get_object_or_404(
+            Follow,
+            follower=follower,
+            author=author
+        )
+        sub.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
     @action(detail=False, url_path='me/avatar',
             methods=['put', 'delete'],
@@ -194,15 +186,9 @@ class RecipeViewSet(ModelViewSet):
         return Response(serialized.data, status=status.HTTP_201_CREATED)
 
     def exclude_recipe_from(self, profile, recipe, model):
-        try:
-            entry = get_object_or_404(model, user=profile, recipe=recipe)
-            entry.delete()
-            return Response(status=status.HTTP_204_NO_CONTENT)
-        except Http404:
-            return Response(
-                {"errors": "Рецепт не был добавлен"},
-                status=status.HTTP_400_BAD_REQUEST
-            )
+        entry = get_object_or_404(model, user=profile, recipe=recipe)
+        entry.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
     def modify_recipe_relation(self, req, pk):
         profile = req.user
@@ -226,24 +212,6 @@ class RecipeViewSet(ModelViewSet):
     )
     def shopping_cart(self, request, pk=None):
         return self.modify_recipe_relation(request, pk)
-
-    def create(self, request, *args, **kwargs):
-        serializer = self.get_serializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        try:
-            self.perform_create(serializer)
-            headers = self.get_success_headers(serializer.data)
-            return Response(
-                serializer.data,
-                status=status.HTTP_201_CREATED,
-                headers=headers
-            )
-        except IntegrityError as err:
-            if "unique_ingredient_in_recipe" in str(err):
-                return Response(
-                    {"errors": "Ингредиенты не должны повторяться"},
-                    status=status.HTTP_400_BAD_REQUEST
-                )
 
     @action(detail=True, methods=["get"], url_path="get-link")
     def get_short_link(self, request, pk=None):
