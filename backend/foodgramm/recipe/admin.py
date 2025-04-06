@@ -7,7 +7,7 @@ from recipe.models import (
     Favorite,
     ShoppingCart
 )
-from .models import User  # Добавляем импорт модели User
+from .models import User
 
 
 @admin.register(User)
@@ -35,7 +35,7 @@ class CookingTimeFilter(admin.SimpleListFilter):
     title = 'Время приготовления'
     parameter_name = 'cooking_time'
     first_quartile = None
-    third_quartile = None  # Добавляем атрибуты для хранения значений
+    third_quartile = None
 
     def lookups(self, request, model_admin):
         cooking_times = list(Recipe.objects.values_list(
@@ -49,7 +49,6 @@ class CookingTimeFilter(admin.SimpleListFilter):
         self.first_quartile = sorted_times[count_recipes // 4]
         self.third_quartile = sorted_times[(3 * count_recipes) // 4]
 
-        # Вычисляем medium_count без запроса к БД
         medium_count = sum(
             self.first_quartile < time <= self.third_quartile
             for time in cooking_times
