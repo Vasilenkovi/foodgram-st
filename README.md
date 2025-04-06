@@ -11,7 +11,7 @@
 ```git clone https://github.com/Vasilenkovi/foodgram-st.git```
 2.  Перейдите в директорию foodgram-st
 3.  Создайте backend/foodgramm/foodgramm/.env и заполните согласнос примеру в backend/foodgramm/foodgramm/env-exapmple.txt данные для БД должные совпадать с данными в docker-compose
-4.  Находясь в папке infra, выполните команду docker-compose up (это поднимет БД, выполнит миграции и загрузит список ингредиентов из папки data, и запустит приложение)
+4.  Находясь в папке infra, выполните команду ```docker-compose up``` (это поднимет БД, выполнит миграции и загрузит список ингредиентов из папки data, и запустит приложение)
 При необходимости можно вручную провести некоторые операции
 1. Убрать из docker-compose.yml
 ```
