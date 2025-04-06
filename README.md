@@ -19,13 +19,13 @@ python manage.py collectstatic --noinput && \
              python manage.py loader && \
 ```
 2. Собрать статику
-  docker compose exec backend python manage.py collectstatic --noinput
+```  docker compose exec backend python manage.py collectstatic --noinput```
 3. Создать миграции
-  docker compose exec backend python manage.py makemigrations
+```  docker compose exec backend python manage.py makemigrations```
 4. Выполнить миграции
-  docker compose exec backend python manage.py migrate
+```  docker compose exec backend python manage.py migrate```
 5. Импортировать ингредиенты
-  docker compose exec backend python manage.py loader
+```  docker compose exec backend python manage.py loader```
 
 Пример файла .env
 ```
